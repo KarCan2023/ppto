@@ -1,3 +1,4 @@
+
 import json
 import io
 from typing import List, Dict
@@ -61,21 +62,21 @@ def init_state():
         st.session_state.umbral_amarillo = 1.0
     if "df_presupuesto" not in st.session_state:
         st.session_state.df_presupuesto = pd.DataFrame(
-            {{
+            {
                 "categoria": ["Abarrotes", "Aseo", "Hogar"],
                 "presupuesto": [300000.0, 80000.0, 120000.0],
-            }}
+            }
         )
     if "df_items" not in st.session_state:
         st.session_state.df_items = pd.DataFrame(
-            {{
+            {
                 "categoria": ["Abarrotes", "Abarrotes"],
                 "item": ["Arroz 5kg", "Leche 1L"],
                 "cantidad": [2, 12],
                 "precio_unitario": [19000.0, 3800.0],
                 "nota": ["Marca habitual", "Entera"],
                 "tienda": ["Tienda A", "Mayorista"],
-            }}
+            }
         )
 
 
@@ -111,15 +112,15 @@ def semaforo(gastado: float, presupuesto: float, umbral_verde: float, umbral_ama
 
 
 def serialize_config() -> str:
-    payload = {{
+    payload = {
         "moneda": st.session_state.moneda,
-        "umbrales": {{
+        "umbrales": {
             "verde": st.session_state.umbral_verde,
             "amarillo": st.session_state.umbral_amarillo,
-        }},
+        },
         "presupuesto": st.session_state.df_presupuesto.fillna(0).to_dict(orient="records"),
         "items": st.session_state.df_items.fillna(0).to_dict(orient="records"),
-    }}
+    }
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
@@ -127,7 +128,7 @@ def deserialize_config(text: str) -> str:
     try:
         data = json.loads(text)
         st.session_state.moneda = data.get("moneda", st.session_state.moneda)
-        um = data.get("umbrales", {{}})
+        um = data.get("umbrales", {})
         st.session_state.umbral_verde = float(um.get("verde", st.session_state.umbral_verde))
         st.session_state.umbral_amarillo = float(um.get("amarillo", st.session_state.umbral_amarillo))
         pres = pd.DataFrame(data.get("presupuesto", []))
@@ -170,12 +171,12 @@ with st.sidebar:
         st.session_state.df_presupuesto,
         num_rows="dynamic",
         use_container_width=True,
-        column_config={{
+        column_config={
             "categoria": st.column_config.TextColumn("Categoría", required=True),
             "presupuesto": st.column_config.NumberColumn(
                 "Presupuesto", min_value=0.0, step=1000.0, format="%0.2f"
             ),
-        }},
+        },
         key="editor_presupuesto",
     )
     st.session_state.df_presupuesto = pres_cfg
@@ -205,14 +206,14 @@ with col1:
         st.session_state.df_items,
         num_rows="dynamic",
         use_container_width=True,
-        column_config={{
+        column_config={
             "categoria": st.column_config.SelectboxColumn("Categoría", options=categorias),
             "item": st.column_config.TextColumn("Ítem", required=True),
             "cantidad": st.column_config.NumberColumn("Cantidad", min_value=0.0, step=1.0),
             "precio_unitario": st.column_config.NumberColumn("Precio unitario", min_value=0.0, step=100.0, format="%0.2f"),
             "nota": st.column_config.TextColumn("Nota"),
             "tienda": st.column_config.TextColumn("Tienda"),
-        }},
+        },
         key="editor_items",
     )
 
@@ -237,9 +238,9 @@ with col2:
         items["total"] = items.get("cantidad", 0) * items.get("precio_unitario", 0)
     items["categoria"] = items["categoria"].astype(str)
 
-    gastado = items.groupby("categoria")["total"].sum().reset_index().rename(columns={{"total": "gastado"}})
+    gastado = items.groupby("categoria")["total"].sum().reset_index().rename(columns={"total": "gastado"})
 
-    resumen = pres.merge(gastado, on="categoria", how="outer").fillna({{"presupuesto": 0.0, "gastado": 0.0}})
+    resumen = pres.merge(gastado, on="categoria", how="outer").fillna({"presupuesto": 0.0, "gastado": 0.0})
     resumen["diferencia"] = resumen["presupuesto"] - resumen["gastado"]
     resumen["estado"] = resumen.apply(
         lambda r: semaforo(r["gastado"], r["presupuesto"], st.session_state.umbral_verde, st.session_state.umbral_amarillo), axis=1
@@ -260,12 +261,12 @@ with col2:
     # Tarjetas por categoría
     for _, row in resumen.iterrows():
         estado = row["estado"]
-        color_class = {{
+        color_class = {
             "verde": "verde",
             "amarillo": "amarillo",
             "rojo": "rojo",
             "gris": "gris",
-        }}.get(estado, "gris")
+        }.get(estado, "gris")
         st.markdown(
             f"""
             <div class="card" style="border-left-color: {COLOR_VERDE if estado=='verde' else COLOR_AMARILLO if estado=='amarillo' else COLOR_ROJO if estado=='rojo' else COLOR_GRIS};">
